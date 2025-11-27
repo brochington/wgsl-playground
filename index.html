@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>WebGPU WGSL Shader Playground</title>
+  <!-- CodeMirror CSS (load before scripts) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+  <style>
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1e1e1e;
+    }
+
+    #container {
+      display: flex;
+      height: 100%;
+    }
+
+    #editor-panel {
+      width: 50%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      border-right: 2px solid #333;
+    }
+
+    #editor-header {
+      background: #2d2d2d;
+      color: #fff;
+      padding: 10px 15px;
+      font-size: 14px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #run-info {
+      font-size: 12px;
+      color: #888;
+    }
+
+    #mode-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .mode-btn {
+      padding: 6px 12px;
+      background: #1e1e1e;
+      color: #888;
+      border: 1px solid #444;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .mode-btn:hover {
+      background: #2a2a2a;
+      color: #ccc;
+    }
+
+    .mode-btn.active {
+      background: #007acc;
+      color: #fff;
+      border-color: #007acc;
+    }
+
+    .mode-label {
+      font-size: 12px;
+      color: #888;
+    }
+
+    #save-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 15px;
+      background: #252525;
+      border-bottom: 1px solid #333;
+    }
+
+    #save-controls input {
+      background: #1e1e1e;
+      border: 1px solid #444;
+      color: #f8f8f2;
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 3px;
+      width: 150px;
+    }
+
+    #save-controls input:focus {
+      outline: none;
+      border-color: #007acc;
+    }
+
+    #save-controls button {
+      padding: 4px 10px;
+      background: #1e1e1e;
+      color: #888;
+      border: 1px solid #444;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    #save-controls button:hover {
+      background: #2a2a2a;
+      color: #ccc;
+    }
+
+    #save-controls button.primary {
+      background: #0e639c;
+      color: #fff;
+      border-color: #0e639c;
+    }
+
+    #save-controls button.primary:hover {
+      background: #1177bb;
+    }
+
+    #save-controls select {
+      background: #1e1e1e;
+      border: 1px solid #444;
+      color: #f8f8f2;
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      min-width: 200px;
+    }
+
+    #save-controls select:focus {
+      outline: none;
+      border-color: #007acc;
+    }
+
+    #save-controls label {
+      font-size: 12px;
+      color: #888;
+    }
+
+    #editor-wrapper {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* CodeMirror base styles */
+    .CodeMirror {
+      height: 100%;
+      font-size: 13px;
+      line-height: 1.5;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace;
+    }
+
+    /* Dracula theme colors - inline fallback */
+    .cm-s-dracula.CodeMirror,
+    .CodeMirror {
+      background: #282a36 !important;
+      color: #f8f8f2 !important;
+    }
+
+    .cm-s-dracula .CodeMirror-gutters,
+    .CodeMirror-gutters {
+      background: #282a36 !important;
+      border-right: 1px solid #44475a !important;
+    }
+
+    .cm-s-dracula .CodeMirror-linenumber,
+    .CodeMirror-linenumber {
+      color: #6272a4 !important;
+      padding: 0 8px;
+      font-size: 12px;
+    }
+
+    .cm-s-dracula .CodeMirror-cursor,
+    .CodeMirror-cursor {
+      border-left: 2px solid #f8f8f2 !important;
+    }
+
+    .cm-s-dracula .CodeMirror-selected,
+    .CodeMirror-selected {
+      background: #44475a !important;
+    }
+
+    .cm-s-dracula .CodeMirror-activeline-background,
+    .CodeMirror-activeline-background {
+      background: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    /* Syntax highlighting colors */
+    .cm-s-dracula .cm-keyword,
+    .cm-keyword {
+      color: #ff79c6 !important;
+    }
+
+    .cm-s-dracula .cm-atom,
+    .cm-atom {
+      color: #bd93f9 !important;
+    }
+
+    .cm-s-dracula .cm-number,
+    .cm-number {
+      color: #bd93f9 !important;
+    }
+
+    .cm-s-dracula .cm-def,
+    .cm-def {
+      color: #50fa7b !important;
+    }
+
+    .cm-s-dracula .cm-variable,
+    .cm-variable {
+      color: #f8f8f2 !important;
+    }
+
+    .cm-s-dracula .cm-variable-2,
+    .cm-variable-2 {
+      color: #f8f8f2 !important;
+    }
+
+    .cm-s-dracula .cm-variable-3,
+    .cm-variable-3 {
+      color: #ffb86c !important;
+    }
+
+    .cm-s-dracula .cm-property,
+    .cm-property {
+      color: #66d9ef !important;
+    }
+
+    .cm-s-dracula .cm-operator,
+    .cm-operator {
+      color: #ff79c6 !important;
+    }
+
+    .cm-s-dracula .cm-comment,
+    .cm-comment {
+      color: #6272a4 !important;
+      font-style: italic;
+    }
+
+    .cm-s-dracula .cm-string,
+    .cm-string {
+      color: #f1fa8c !important;
+    }
+
+    .cm-s-dracula .cm-string-2,
+    .cm-string-2 {
+      color: #f1fa8c !important;
+    }
+
+    .cm-s-dracula .cm-meta,
+    .cm-meta {
+      color: #f8f8f2 !important;
+    }
+
+    .cm-s-dracula .cm-qualifier,
+    .cm-qualifier {
+      color: #50fa7b !important;
+    }
+
+    .cm-s-dracula .cm-builtin,
+    .cm-builtin {
+      color: #8be9fd !important;
+    }
+
+    .cm-s-dracula .cm-bracket,
+    .cm-bracket {
+      color: #f8f8f2 !important;
+    }
+
+    .cm-s-dracula .cm-tag,
+    .cm-tag {
+      color: #ff79c6 !important;
+    }
+
+    .cm-s-dracula .cm-attribute,
+    .cm-attribute {
+      color: #50fa7b !important;
+    }
+
+    .cm-s-dracula .cm-type,
+    .cm-type {
+      color: #8be9fd !important;
+    }
+
+    .CodeMirror-matchingbracket {
+      text-decoration: underline;
+      color: white !important;
+    }
+
+    #canvas-panel {
+      width: 50%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: #1a1a1a;
+    }
+
+    #canvas-header {
+      background: #2d2d2d;
+      color: #fff;
+      padding: 10px 15px;
+      font-size: 14px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #uniforms-info {
+      font-size: 11px;
+      color: #888;
+      font-family: monospace;
+    }
+
+    #canvas-wrapper {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #000;
+    }
+
+    #error-display {
+      background: #3d1f1f;
+      color: #ff6b6b;
+      padding: 10px 15px;
+      font-family: monospace;
+      font-size: 12px;
+      border-top: 2px solid #ff0000;
+      max-height: 150px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    #error-display.visible {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+    <div id="editor-panel">
+      <div id="editor-header">
+        <div>
+          <span>WGSL Shader Editor</span>
+        </div>
+        <div id="mode-controls">
+          <span class="mode-label">Mode:</span>
+          <button class="mode-btn active" data-mode="triangle">Triangle</button>
+          <button class="mode-btn" data-mode="quad">Full-Screen Quad (SDF)</button>
+        </div>
+        <span id="run-info">Cmd/Ctrl+Enter or Cmd/Ctrl+S to run</span>
+      </div>
+      <div id="save-controls">
+        <button id="new-shader-btn">New</button>
+        <label style="margin-left: 10px;">Save:</label>
+        <input type="text" id="shader-name" placeholder="Enter shader name..." />
+        <button id="save-shader-btn" class="primary">Save</button>
+        <button id="update-shader-btn" class="primary" style="display: none;">Update</button>
+        <label style="margin-left: 10px;">Load:</label>
+        <select id="saved-shaders">
+          <option value="">-- Select saved shader --</option>
+        </select>
+        <button id="load-shader-btn">Load</button>
+        <button id="delete-shader-btn">Delete</button>
+        <label style="margin-left: 10px;">Backup:</label>
+        <button id="export-shaders-btn">Export All</button>
+        <button id="import-shaders-btn">Import</button>
+        <input type="file" id="import-file-input" accept=".json" style="display: none;" />
+      </div>
+      <div id="editor-wrapper">
+        <textarea id="shader-editor"></textarea>
+      </div>
+      <div id="error-display"></div>
+    </div>
+    <div id="canvas-panel">
+      <div id="canvas-header">
+        <span>WebGPU Output</span>
+        <span id="uniforms-info">Uniforms: u.resolution, u.time, u.frame, u.mouse, u.mouseDown</span>
+      </div>
+      <div id="canvas-wrapper">
+        <canvas id="canvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- CodeMirror Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/mode/simple.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/rust/rust.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/selection/active-line.min.js"></script>
+  
+  <!-- Main Application Script -->
+  <script src="main.js"></script>
+</body>
+
+</html>
