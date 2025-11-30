@@ -15,19 +15,18 @@
     <div id="editor-panel">
       <div id="editor-header">
         <div>
-          <span>WGSL Shader Editor</span>
+          <span>WGSL Playground</span>
         </div>
-        <div id="mode-controls">
-          <span class="mode-label">Base:</span>
-          <select id="mode-select" class="mode-select">
-            <option value="triangle">Triangle</option>
-            <option value="quad">Full-Screen Quad (SDF)</option>
-            <option value="texture">Procedural Pattern</option>
-            <option value="interactive">Interactive Controls Demo</option>
-          </select>
-        </div>
-        <!-- Updated Right Side: Info + Settings + Run Info -->
         <div style="display: flex; align-items: center; gap: 10px;">
+          <div id="mode-controls">
+            <span class="mode-label">Base:</span>
+            <select id="mode-select" class="mode-select">
+              <option value="triangle">Triangle</option>
+              <option value="quad">Full-Screen Quad (SDF)</option>
+              <option value="texture">Procedural Pattern</option>
+              <option value="interactive">Interactive Controls Demo</option>
+            </select>
+          </div>
           <button id="info-btn" class="icon-btn" title="Info & Help">
             <i class="fas fa-info-circle"></i>
           </button>
