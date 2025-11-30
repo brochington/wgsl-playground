@@ -34,8 +34,10 @@ async function initApp() {
 
     // Initialize WebGPU
     await initWebGPU()
-      .then(() => {
+      .then(async () => {
         setupWebGPUFeatures();
+        // Load and restore textures from persistent storage
+        await textureManager.loadAndRestoreTextures();
       })
       .catch((error) => {
         const errorDisplay = document.getElementById('error-display');

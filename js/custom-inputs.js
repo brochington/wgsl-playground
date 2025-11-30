@@ -122,6 +122,15 @@ class CustomInputsManager {
     return false;
   }
 
+  // Clear all custom inputs
+  clearAllInputs() {
+    this.inputs = [];
+    this.inputValues.clear();
+    appState.customInputs = this.inputs;
+    appState.inputValues = this.inputValues;
+    this.saveCustomInputs();
+  }
+
   // Update input value
   updateInputValue(inputId, value) {
     this.inputValues.set(inputId, value);
@@ -381,4 +390,10 @@ export function removeCustomInput(inputId) {
 
 export function getAllCustomInputs() {
   return customInputsManager.getAllInputs();
+}
+
+export function clearAllCustomInputs() {
+  customInputsManager.clearAllInputs();
+  // Force buffer update after clearing inputs
+  updateCustomUniformBuffer();
 }

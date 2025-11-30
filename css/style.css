@@ -105,6 +105,7 @@ html {
 
 #save-controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
   padding: 8px 15px;
@@ -475,6 +476,91 @@ html {
 
 .close-modal:hover {
   color: #fff;
+}
+
+/* Info Modal Styles */
+.info-content {
+  padding: 20px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.info-section {
+  margin-bottom: 25px;
+}
+
+.info-section h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: #888;
+  letter-spacing: 1px;
+}
+
+.info-section p {
+  margin: 0 0 15px 0;
+  line-height: 1.5;
+  color: #ccc;
+}
+
+.info-section ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.info-section li {
+  margin-bottom: 8px;
+  color: #ccc;
+}
+
+.info-section a {
+  color: #007acc;
+  text-decoration: none;
+}
+
+.info-section a:hover {
+  text-decoration: underline;
+}
+
+.info-section a i {
+  margin-right: 8px;
+  width: 16px;
+}
+
+.uniforms-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.uniforms-grid div {
+  background: #1e1e1e;
+  padding: 8px 12px;
+  border-radius: 3px;
+  border: 1px solid #333;
+}
+
+.uniforms-grid code {
+  color: #50fa7b;
+  font-weight: bold;
+}
+
+kbd {
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.2), 0 0 0 2px #252526 inset;
+  color: #ccc;
+  display: inline-block;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 0 .1em;
+  padding: .1em .6em;
+  text-shadow: 0 1px 0 #000;
 }
 
 .setting-group {

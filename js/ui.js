@@ -25,6 +25,7 @@ import {
   customInputsManager,
   loadInteractiveDemoInputs,
   clearInteractiveDemoInputs,
+  clearAllCustomInputs,
 } from './custom-inputs.js';
 import { INPUT_TYPES } from './constants.js';
 
@@ -35,8 +36,10 @@ let elements = {};
 function cacheElements() {
   elements = {
     modeSelect: document.getElementById('mode-select'),
+    infoBtn: document.getElementById('info-btn'),
     settingsBtn: document.getElementById('settings-btn'),
     closeModal: document.getElementsByClassName('close-modal')[0],
+    infoModal: document.getElementById('info-modal'),
     clearColor: document.getElementById('clear-color'),
     clearColorHex: document.getElementById('clear-color-hex'),
     resolutionScale: document.getElementById('resolution-scale'),
@@ -103,12 +106,17 @@ function setupEventListeners() {
   // Mode switching
   elements.modeSelect.addEventListener('change', (e) => handleModeChange(e));
 
+  // Info modal
+  elements.infoBtn.onclick = () => openInfoModal();
   // Settings modal
   elements.settingsBtn.onclick = () => openSettingsModal();
-  elements.closeModal.onclick = () => closeSettingsModal();
+  elements.closeModal.onclick = () => closeModals();
   window.onclick = (event) => {
     if (event.target === elements.modal) {
       closeSettingsModal();
+    }
+    if (event.target === elements.infoModal) {
+      closeInfoModal();
     }
   };
 
@@ -214,6 +222,9 @@ function handleModeChange(event) {
   if (appState.currentMode !== mode && appState.currentMode === 'interactive') {
     // Clear interactive demo inputs when leaving interactive mode
     clearInteractiveDemoInputs();
+  } else if (appState.currentMode !== mode && mode !== 'interactive') {
+    // Clear all custom inputs when switching to non-interactive modes
+    clearAllCustomInputs();
   }
 
   // Load demo inputs for interactive mode BEFORE loading the shader
@@ -232,6 +243,8 @@ function handleModeChange(event) {
   } else {
     // Hide inputs panel for non-interactive modes
     elements.customInputsContainer.style.display = 'none';
+    // Update inputs list display
+    updateInputsList();
   }
 
   // Make editor editable (in case it was read-only from example shader)
@@ -243,6 +256,20 @@ function handleModeChange(event) {
 
   // Update URL with new mode
   updateURL(null, appState.currentMode);
+
+  // Run the shader with the new base to update the output
+  if (window.webgpu && window.webgpu.runCurrentShader) {
+    window.webgpu.runCurrentShader();
+  }
+}
+
+// Info modal functions
+function openInfoModal() {
+  elements.infoModal.style.display = 'block';
+}
+
+function closeInfoModal() {
+  elements.infoModal.style.display = 'none';
 }
 
 // Settings modal functions
@@ -252,6 +279,12 @@ function openSettingsModal() {
 
 function closeSettingsModal() {
   elements.modal.style.display = 'none';
+}
+
+// Close any open modals
+function closeModals() {
+  closeSettingsModal();
+  closeInfoModal();
 }
 
 // Shader management handlers
@@ -305,6 +338,13 @@ function handleLoadShader() {
     if (shader.mode !== appState.currentMode) {
       appState.currentMode = shader.mode;
       updateModeSelect();
+    }
+
+    // Clear existing custom inputs unless loading interactive demo
+    if (shader.mode !== 'interactive') {
+      clearAllCustomInputs();
+      // Update inputs list display
+      updateInputsList();
     }
 
     // Load shader code
@@ -887,10 +927,9 @@ function updateTexturesList() {
 
     const removeBtn = document.createElement('button');
     removeBtn.textContent = 'Remove';
-    removeBtn.addEventListener('click', () => {
+    removeBtn.addEventListener('click', async () => {
       if (confirm(`Remove texture "${textureData.name}"?`)) {
-        textureManager.removeTexture(textureData.name);
-        textureManager.saveTextureUploads();
+        await textureManager.removeTexture(textureData.name);
         updateTexturesList();
         // Trigger shader re-run to remove texture
         if (window.webgpu && window.webgpu.runCurrentShader) {
