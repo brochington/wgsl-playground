@@ -2,6 +2,9 @@
 
 A WebGPU shader playground for experimenting with WGSL (WebGPU Shading Language) in real-time.
 
+<img width="1662" height="987" alt="image" src="https://github.com/user-attachments/assets/83f17f61-efb9-4e0b-acfd-0abdf552fa9d" />
+
+
 ## Features
 
 - **Live Code Editor**: Powered by CodeMirror with syntax highlighting and customizable settings
