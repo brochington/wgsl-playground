@@ -8,7 +8,7 @@ import {
   saveShader,
   EXAMPLE_SHADERS,
 } from './shaders.js';
-import { updateURL } from './url-manager.js';
+import { updateURL, generateShareableURL } from './url-manager.js';
 import {
   addCustomUniform,
   removeCustomUniform,
@@ -36,6 +36,7 @@ let elements = {};
 function cacheElements() {
   elements = {
     modeSelect: document.getElementById('mode-select'),
+    shareBtn: document.getElementById('share-btn'),
     infoBtn: document.getElementById('info-btn'),
     settingsBtn: document.getElementById('settings-btn'),
     closeModal: document.getElementsByClassName('close-modal')[0],
@@ -107,10 +108,15 @@ function setupEventListeners() {
   elements.modeSelect.addEventListener('change', (e) => handleModeChange(e));
 
   // Info modal
+  elements.shareBtn.onclick = () => handleSharePlayground();
   elements.infoBtn.onclick = () => openInfoModal();
   // Settings modal
   elements.settingsBtn.onclick = () => openSettingsModal();
-  elements.closeModal.onclick = () => closeModals();
+  // Add event listeners to all close buttons
+  const closeButtons = document.getElementsByClassName('close-modal');
+  for (let i = 0; i < closeButtons.length; i++) {
+    closeButtons[i].onclick = () => closeModals();
+  }
   window.onclick = (event) => {
     if (event.target === elements.modal) {
       closeSettingsModal();
@@ -285,6 +291,30 @@ function closeSettingsModal() {
 function closeModals() {
   closeSettingsModal();
   closeInfoModal();
+}
+
+// Share playground state
+function handleSharePlayground() {
+  try {
+    const shareableURL = generateShareableURL();
+    navigator.clipboard.writeText(shareableURL).then(() => {
+      // Show temporary success message
+      const originalTitle = elements.shareBtn.title;
+      elements.shareBtn.title = 'Copied to clipboard!';
+      elements.shareBtn.innerHTML = '<i class="fas fa-check"></i>';
+      setTimeout(() => {
+        elements.shareBtn.title = originalTitle;
+        elements.shareBtn.innerHTML = '<i class="fas fa-share-alt"></i>';
+      }, 2000);
+    }).catch((err) => {
+      console.error('Failed to copy to clipboard:', err);
+      // Fallback: show the URL in a prompt
+      window.prompt('Copy this shareable link:', shareableURL);
+    });
+  } catch (error) {
+    console.error('Error generating shareable URL:', error);
+    alert('Failed to generate shareable link. Please try again.');
+  }
 }
 
 // Shader management handlers

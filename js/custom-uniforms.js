@@ -175,6 +175,12 @@ export function parseUniformValue(input, type) {
   }
 }
 
+export function loadCustomUniformsFromData(uniformsData) {
+  appState.customUniforms = uniformsData;
+  // Force buffer update
+  updateCustomUniformBuffer();
+}
+
 // Initialize custom uniforms system
 export function initCustomUniforms() {
   appState.customUniforms = loadCustomUniforms();

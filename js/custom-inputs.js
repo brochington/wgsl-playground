@@ -397,3 +397,11 @@ export function clearAllCustomInputs() {
   // Force buffer update after clearing inputs
   updateCustomUniformBuffer();
 }
+
+export function loadCustomInputsFromData(inputsData) {
+  customInputsManager.inputs = inputsData.inputs || [];
+  customInputsManager.inputValues = new Map(Object.entries(inputsData.values || {}));
+  appState.customInputs = customInputsManager.inputs;
+  appState.inputValues = customInputsManager.inputValues;
+  customInputsManager.saveCustomInputs();
+}

@@ -1,11 +1,11 @@
 import { initUI, initializeSettingsUI, updateModeUI, updateSaveButtons } from './ui.js';
 import { initWebGPU, setupWebGPUFeatures } from './webgpu.js';
-import { getInitialStateFromURL, updateURL } from './url-manager.js';
+import { getInitialStateFromURL, updateURL, loadStateFromURL } from './url-manager.js';
 import { setupAutosave, loadAutosaveState } from './autosave-manager.js';
 import { SHADERS, loadShader } from './shaders.js';
 import { appState, saveSettings } from './storage.js';
-import { initCustomUniforms } from './custom-uniforms.js';
-import { initCustomInputs } from './custom-inputs.js';
+import { initCustomUniforms, loadCustomUniformsFromData } from './custom-uniforms.js';
+import { initCustomInputs, loadCustomInputsFromData } from './custom-inputs.js';
 import { textureManager } from './texture-manager.js';
 
 // Application initialization
@@ -24,10 +24,10 @@ async function initApp() {
     initCustomInputs();
 
     // Get initial state from URL
-    const { mode, shader } = getInitialStateFromURL();
+    const urlState = loadStateFromURL();
 
     // Initialize app state based on URL parameters or autosave
-    initializeAppState(mode, shader);
+    initializeAppState(urlState);
 
     // Initialize settings UI
     initializeSettingsUI();
@@ -51,41 +51,72 @@ async function initApp() {
   }
 }
 
-function initializeAppState(initialMode, shaderName) {
-  let mode = initialMode;
-  let loadedFromAutosave = false;
+function initializeAppState(urlState) {
+  let loadedFromURL = false;
 
-  // 1. Try to load specific shader from URL
-  if (shaderName) {
-    const shader = loadShader(shaderName);
-    if (shader) {
-      mode = shader.mode;
-      appState.editor.setValue(shader.code);
-      updateSaveButtons(shaderName);
-      updateModeUI(mode);
-      return;
+  // 1. Try to load full state from URL
+  if (urlState.code || urlState.settings || urlState.uniforms.length > 0 || urlState.inputs) {
+    // Load mode
+    appState.currentMode = urlState.mode;
+
+    // Load shader code
+    if (urlState.code) {
+      appState.editor.setValue(urlState.code);
     } else {
-      // Shader not found, clear the param
-      updateURL(null, mode);
+      appState.editor.setValue(SHADERS[urlState.mode] || SHADERS.triangle);
     }
-  }
 
-  // 2. Try autosave
-  const autosaveState = loadAutosaveState();
-  if (autosaveState) {
-    mode = autosaveState.mode;
-    appState.editor.setValue(autosaveState.code);
-    loadedFromAutosave = true;
+    // Load settings
+    if (urlState.settings) {
+      Object.assign(appState.settings, urlState.settings);
+      saveSettings();
+    }
+
+    // Load custom uniforms
+    if (urlState.uniforms.length > 0) {
+      loadCustomUniformsFromData(urlState.uniforms);
+    }
+
+    // Load custom inputs
+    if (urlState.inputs) {
+      loadCustomInputsFromData(urlState.inputs);
+    }
+
+    updateModeUI(urlState.mode);
+    loadedFromURL = true;
   } else {
-    // 3. Fresh start - use default shader for mode
-    if (!SHADERS[mode]) mode = 'triangle';
-    appState.editor.setValue(SHADERS[mode]);
+    // 2. Try to load specific shader from URL (legacy support)
+    const { mode, shader } = getInitialStateFromURL();
+    if (shader) {
+      const shaderData = loadShader(shader);
+      if (shaderData) {
+        appState.currentMode = shaderData.mode;
+        appState.editor.setValue(shaderData.code);
+        updateSaveButtons(shader);
+        updateModeUI(shaderData.mode);
+        return;
+      } else {
+        // Shader not found, clear the param
+        updateURL(null, mode);
+      }
+    }
+
+    // 3. Try autosave
+    const autosaveState = loadAutosaveState();
+    if (autosaveState) {
+      appState.currentMode = autosaveState.mode;
+      appState.editor.setValue(autosaveState.code);
+    } else {
+      // 4. Fresh start - use default shader for mode
+      appState.currentMode = urlState.mode;
+      appState.editor.setValue(SHADERS[urlState.mode] || SHADERS.triangle);
+    }
+
+    updateModeUI(appState.currentMode);
   }
 
-  // Update UI
-  appState.currentMode = mode;
-  updateModeUI(mode);
-  updateURL(null, mode);
+  // Update URL to reflect current state (without full state for performance)
+  updateURL(null, appState.currentMode);
 }
 
 if (document.readyState === 'loading') {
